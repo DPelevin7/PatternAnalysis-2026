@@ -150,14 +150,14 @@ test_loader = DataLoader(ADNIDataset("./ADNI/AD_NC/test", "AD", "NC"), batch_siz
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Hyper-parameters
-epochs = 50
-learning_rate = 1e-3
+epochs = 200
+learning_rate = 4e-3
 
 model = ConvNeXt()
 model = model.to(device)
 
 criterion = nn.CrossEntropyLoss()
-optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
+optimiser = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
 print("Training Start")
 
