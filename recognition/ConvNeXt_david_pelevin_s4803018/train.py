@@ -7,7 +7,10 @@ from PIL import Image
 import modules
 import dataset
 
-train_loader = DataLoader(dataset.ADNI_train("./ADNI/AD_NC/train", "AD", "NC"), batch_size=32, shuffle=True)
+train_split, val_split = dataset.train_val_split("/content/drive/My Drive/AD_NC/train", "AD", "NC")
+
+train_loader = DataLoader(dataset.ADNI_train("./ADNI/AD_NC/train", "AD", "NC", train_split), batch_size=32, shuffle=True)
+val_loader = DataLoader(dataset.ADNI_test("./ADNI/AD_NC/train", "AD", "NC", val_split), batch_size=32, shuffle=False)
 test_loader = DataLoader(dataset.ADNI_test("./ADNI/AD_NC/test", "AD", "NC"), batch_size=32, shuffle=False)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -38,7 +41,16 @@ for epoch in range(epochs):
         optimiser.step()
         total_loss += loss.item()
 
-    print(f"Epoch: {epoch} Loss: {total_loss / len(train_loader)}")
+    correct, total = 0, 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            preds = outputs.argmax(dim=1)
+            correct += (preds == labels).sum().item()
+            total += labels.size(0)
+
+    print(f"Epoch: {epoch} Loss: {total_loss / len(train_loader)} Validation accuracy: {correct/total:.4f}")
 
 model.eval()
 correct, total = 0, 0
