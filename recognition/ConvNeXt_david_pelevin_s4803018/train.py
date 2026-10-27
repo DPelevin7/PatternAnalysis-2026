@@ -14,7 +14,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Hyper-parameters
 epochs = 75
-learning_rate = 0.9e-3
+learning_rate = 4e-4
 
 model = modules.ConvNeXt()
 model = model.to(device)
