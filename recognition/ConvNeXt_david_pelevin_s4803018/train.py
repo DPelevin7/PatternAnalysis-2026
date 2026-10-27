@@ -22,7 +22,7 @@ learning_rate = 4e-4
 model = modules.ConvNeXt()
 model = model.to(device)
 
-criterion = nn.CrossEntropyLoss()
+criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
 optimiser = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
 print("Training Start")

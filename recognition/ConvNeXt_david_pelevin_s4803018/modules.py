@@ -1,4 +1,4 @@
-import torch
+import torch, torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -56,6 +56,8 @@ class ConvNeXtBlock(nn.Module):
         input = self.gelu(input)
         input = self.conv2(input)
         input = (self.gamma * input.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+        # Stochastic Depth A.K.A Drop Path
+        input = torchvision.ops.stochastic_depth(input, 0.1, "row", self.training)
 
         return input + carryThrough
 

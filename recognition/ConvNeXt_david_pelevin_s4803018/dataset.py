@@ -33,6 +33,11 @@ class ADNIDataset(Dataset):
             self.labels.append(torch.tensor(1))
 
         for path in nc_path.glob("*.jpeg"):
+            patient_id = path.name.split(".")[0].split("_")[0]
+            if (patients != None) and (patient_id not in patients):
+                # Not in this split
+                continue
+            
             image = Image.open(path).convert("L")
             
             # https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
