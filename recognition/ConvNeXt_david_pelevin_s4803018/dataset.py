@@ -37,7 +37,7 @@ class ADNIDataset(Dataset):
             if (patients != None) and (patient_id not in patients):
                 # Not in this split
                 continue
-            
+
             image = Image.open(path).convert("L")
             
             # https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
@@ -61,7 +61,7 @@ def normalise_image(image, dtype=torch.float32):
     return (image - _mean) / _std
 
 # Based off code from Shakes for previous demo
-def preprocess_image(image, crop_pad=4):
+def preprocess_image(image, crop_pad=32):
     image = normalise_image(image)
 
     #horizontal flip
@@ -153,8 +153,8 @@ def train_val_split(root_directory, ad_directory, nc_directory):
     ad_patients = record_unique_patients(Path(root_directory + "/" + ad_directory))
     nc_patients = record_unique_patients(Path(root_directory + "/" + nc_directory))
 
-    ad_train, ad_val = train_test_split(ad_patients, test_size=0.4, random_state=50)
-    nc_train, nc_val = train_test_split(nc_patients, test_size=0.4, random_state=50)
+    ad_train, ad_val = train_test_split(ad_patients, test_size=0.2, random_state=50)
+    nc_train, nc_val = train_test_split(nc_patients, test_size=0.2, random_state=50)
 
     train_split = ad_train + nc_train
     val_split = ad_val + nc_val

@@ -16,7 +16,7 @@ test_loader = DataLoader(dataset.ADNI_test("./ADNI/AD_NC/test", "AD", "NC"), bat
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Hyper-parameters
-epochs = 75
+epochs = 100
 learning_rate = 4e-4
 
 model = modules.ConvNeXt()
@@ -41,6 +41,7 @@ for epoch in range(epochs):
         optimiser.step()
         total_loss += loss.item()
 
+    model.eval()
     correct, total = 0, 0
     with torch.no_grad():
         for images, labels in val_loader:
