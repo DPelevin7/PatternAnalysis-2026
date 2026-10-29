@@ -5,62 +5,57 @@ from PIL import Image
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split
 
-# Calculated using the ADNIDatasetFull class
+## Calculated using the ADNIDatasetFull class
 full_dataset_mean = torch.tensor(29.5524, dtype=torch.float32)
 full_dataset_std = torch.tensor(57.5199, dtype=torch.float32)
 
-# Based off code from previous demo
+## Based off code from previous demo
 class ADNIDataset(Dataset):
-    def __init__(self, root_directory, ad_directory, nc_directory, patients=None):
+    """
+    
+    """
+    def __init__(self, train_directory, test_directory, ad_directory, nc_directory, patients=None):
         self.images = []
         self.labels = []
 
-        ad_path = Path(root_directory + "/" + ad_directory)
-        nc_path = Path(root_directory + "/" + nc_directory)
+        paths = [Path(train_directory + "/" + ad_directory),
+                 Path(test_directory + "/" + nc_directory),
+                 Path(train_directory + "/" + ad_directory),
+                 Path(test_directory + "/" + nc_directory)]
 
-        for path in sorted(ad_path.glob("*.jpeg")):
-            patient_id = path.name.split(".")[0].split("_")[0]
-            if (patients != None) and (patient_id not in patients):
-                # Not in this split
-                continue
+        for i in range(4):
+            for path in sorted(paths[i].glob("*.jpeg")):
+                patient_id = path.name.split(".")[0].split("_")[0]
+                if (patients != None) and (patient_id not in patients):
+                    # Not in this split
+                    continue
 
-            image = Image.open(path).convert("L")
+                image = Image.open(path).convert("L")
 
-            # https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
-            image_tensor = torchvision.transforms.functional.pil_to_tensor(image).to(torch.float32)
+                ## https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
+                image_tensor = torchvision.transforms.functional.pil_to_tensor(image).to(torch.float32)
 
-            self.images.append(image_tensor)
-            self.labels.append(torch.tensor(1))
-
-        for path in sorted(nc_path.glob("*.jpeg")):
-            patient_id = path.name.split(".")[0].split("_")[0]
-            if (patients != None) and (patient_id not in patients):
-                # Not in this split
-                continue
-
-            image = Image.open(path).convert("L")
-            
-            # https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
-            image_tensor = torchvision.transforms.functional.pil_to_tensor(image).to(torch.float32)
-
-            self.images.append(image_tensor)
-            self.labels.append(torch.tensor(0))
+                self.images.append(image_tensor)
+                self.labels.append(torch.tensor(1 - (i % 2)))
 
     def __len__(self):
+        """
+        Returns the number of 
+        """
         return len(self.labels)
 
     def __getitem__(self, idx):
         return self.images[idx], self.labels[idx]
 
 
-# Based off code from Shakes for previous demo
+## Based off code from Shakes for previous demo
 def normalise_image(image, dtype=torch.float32):
     image = image.to(dtype)
     _mean = full_dataset_mean.to(dtype=dtype, device=image.device)
     _std = full_dataset_std.to(dtype=dtype, device=image.device)
     return (image - _mean) / _std
 
-# Based off code from Shakes for previous demo
+## Based off code from Shakes for previous demo
 def preprocess_image(image, crop_pad=32):
     image = normalise_image(image)
 
@@ -178,3 +173,19 @@ def train_val_split(root_directory, ad_directory, nc_directory):
     val_split = ad_val + nc_val
 
     return train_split, val_split
+
+def train_val_test_split(train_directory, test_directory, ad_directory, nc_directory):
+    ad_patients = record_unique_patients(Path(train_directory + "/" + ad_directory)) + record_unique_patients(Path(test_directory + "/" + ad_directory))
+    nc_patients = record_unique_patients(Path(train_directory + "/" + nc_directory)) + record_unique_patients(Path(test_directory + "/" + nc_directory))
+
+    ad_train, ad_test = train_test_split(ad_patients, test_size=0.33, random_state=50)
+    nc_train, nc_test = train_test_split(nc_patients, test_size=0.33, random_state=50)
+
+    ad_train, ad_val = train_test_split(ad_train, test_size=0.2, random_state=50)
+    nc_train, nc_val = train_test_split(nc_train, test_size=0.2, random_state=50)
+
+    train_split = ad_train + nc_train
+    val_split = ad_val + nc_val
+    test_split = ad_test + nc_test
+
+    return train_split, val_split, test_split

@@ -2,11 +2,18 @@ import torch, torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 
-## Code developed using the following websites
-## https://docs.pytorch.org/tutorials/beginner/blitz/neural_networks_tutorial.html
-## https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 class CNN(nn.Module):
+    """
+    A simple convolutional neural network for 256x240px images
+
+    Code developed using the following websites
+    https://docs.pytorch.org/tutorials/beginner/blitz/neural_networks_tutorial.html
+    https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
+    """
     def __init__(self):
+        """
+        Initialises the components of the CNN with the relevant dimensions
+        """
         super().__init__()
 
         self.conv1 = nn.Conv2d(1, 32, 3)
@@ -21,6 +28,13 @@ class CNN(nn.Module):
         self.fc2 = nn.Linear(128, 2)
 
     def forward(self, input):
+        """
+        Classifies a batch of images using the CNN and returns logits
+        representing the confidence of the model in each class.
+
+        Parameters:
+            input (Tensor N, C, H, W / C, H, W): The batch of images to be categorised.
+        """
         input = self.pool(F.relu(self.conv1(input)))
         input = self.pool(F.relu(self.conv2(input)))
         input = self.pool(F.relu(self.conv3(input)))
