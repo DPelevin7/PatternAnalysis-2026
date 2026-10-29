@@ -1,13 +1,17 @@
 # ConvNeXt ADNI Report - s4803018 (David Pelevin)
 ## Introduction
 
+This repository focus on the implementation of a ConvNeXt model for identifying Alzheimer's Disease in patients. An ADNI dataset consisting of 2D slices of brain scans with existing train/test splits was provided to train the model. Ideally, the model will quickly and accurately identify the disease, however previous usage of AI models in medical fields revealed drastic overconfidence and overfitting. As a result, the model should be able to identify more uncertain cases that need human review. This facilitates sensible human oversight and accounting for possible errors in the model while still reducing the workload for doctors. ConvNeXt was chosen for its modern image processing design and its use of logits, which can be used to determine the model's confidence.
+
 ## Algorithm Breakdown
+
+
 
 ## Feasibility Review
 
 ### User Need, Scope & Acceptance Criteria
 
-This machine learning model is intended to be used to automatically identify Alzheimer’s disease within a patient’s brain scans. Patients with uncertain results should be flagged for human review, allowing doctors and specialist to focus on more ambiguous cases.
+This machine learning model is intended to be used to automatically identify Alzheimer’s disease within a patient’s brain scans. Patients with uncertain results should be flagged for human review, allowing doctors and specialists to focus on more ambiguous cases.
 
 The open research question involves testing advanced models against basic models to determine if the improved accuracy is worth the increased resource requirements. Beyond the required 80% test accuracy required by the task, the following criteria were chosen:
 
@@ -51,14 +55,40 @@ The results of this report should be reproducible due to the usage of specific s
 
 ## Preprocessing and Hyperparameter Decisions
 
+Preprocessing occurs with the following steps:
+
+-   Normalisation
+-   Random Horizontal Flips
+-   Random crops of the files
+
+** Must finish writing **
+
 ## Open Research Dilemna
 ### Data Hygiene
 
+As alluded to in the Feasibility Review, running an initial data audit on the provided ADNI dataset yields the following:
+
+-   520 unique patients in AD Train
+-   556 unique patients in NC Train
+-   223 unique patients in AD Test
+-   227 unique patients in NC Test
+-   0 duplicate patients among the train/test and AD/NC splits
+
+This audit is based on the assumption given by tutors that the filenames follow the format: "patient_id"_"slice_id".jpeg.
+
+To ensure no data leakage occurs, the training validation split was performed on the patient level instead of the slice level. This patient level split is performed in dataset.train_val_split, the outputs of which are used in the dataset.ADNIDataset. Patient IDs of each slice are checked when constructing the dataset and compared with the given split to ensure no data leakage occurs.
+
 ### Quantitative Benchmarking Against CNN
+
+
 
 ### Resource Profiling Table
 
+
+
 ### Failure Case Autopsy and Low Confidence Suggestions
+
+
 
 ## Artificial Intelligence Usage Disclosure
 
