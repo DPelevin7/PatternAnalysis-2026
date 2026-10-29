@@ -4,9 +4,19 @@ from torch.utils.data import DataLoader
 import modules
 import dataset
 
+# Removes Randomness and allows for Reproducibility
+# Based off suggestions from https://docs.pytorch.org/docs/2.15/notes/randomness.html
+torch.manual_seed(50)
+torch.backends.cudnn.benchmark = False
+torch.use_deterministic_algorithms(True)
+torch.backends.cudnn.deterministic = True
+
+train_generator = torch.Generator()
+train_generator.manual_seed(50)
+
 train_split, val_split = dataset.train_val_split("/content/drive/My Drive/AD_NC/train", "AD", "NC")
 
-train_loader = DataLoader(dataset.ADNI_train("./ADNI/AD_NC/train", "AD", "NC", train_split), batch_size=32, shuffle=True)
+train_loader = DataLoader(dataset.ADNI_train("./ADNI/AD_NC/train", "AD", "NC", train_split), batch_size=32, shuffle=True, generator=train_generator)
 val_loader = DataLoader(dataset.ADNI_test("./ADNI/AD_NC/train", "AD", "NC", val_split), batch_size=32, shuffle=False)
 test_loader = DataLoader(dataset.ADNI_test("./ADNI/AD_NC/test", "AD", "NC"), batch_size=32, shuffle=False)
 
