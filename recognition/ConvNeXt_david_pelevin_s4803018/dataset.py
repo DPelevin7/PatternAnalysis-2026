@@ -18,7 +18,7 @@ class ADNIDataset(Dataset):
         ad_path = Path(root_directory + "/" + ad_directory)
         nc_path = Path(root_directory + "/" + nc_directory)
 
-        for path in ad_path.glob("*.jpeg"):
+        for path in sorted(ad_path.glob("*.jpeg")):
             patient_id = path.name.split(".")[0].split("_")[0]
             if (patients != None) and (patient_id not in patients):
                 # Not in this split
@@ -32,7 +32,7 @@ class ADNIDataset(Dataset):
             self.images.append(image_tensor)
             self.labels.append(torch.tensor(1))
 
-        for path in nc_path.glob("*.jpeg"):
+        for path in sorted(nc_path.glob("*.jpeg")):
             patient_id = path.name.split(".")[0].split("_")[0]
             if (patients != None) and (patient_id not in patients):
                 # Not in this split
@@ -110,7 +110,7 @@ class ADNIDatasetFull(Dataset):
         paths = [train_ad_path, train_nc_path, test_ad_path, test_nc_path]
 
         for i in range(4):
-            for path in paths[i].glob("*.jpeg"):
+            for path in sorted(paths[i].glob("*.jpeg")):
                 image = Image.open(path).convert("L")
 
                 # https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
@@ -142,12 +142,30 @@ class ADNIDatasetFull(Dataset):
 def record_unique_patients(directory):
     patients = []
 
-    for path in directory.glob("*.jpeg"):
+    for path in sorted(directory.glob("*.jpeg")):
         file_name = path.name.split(".")[0]
         patient = file_name.split("_")[0]
         if patient not in patients: patients.append(patient)
 
     return patients
+
+def data_audit(train_root_directory, test_root_directory, ad_directory, nc_directory):
+    all_patients = [0, 0, 0, 0]
+    patient_groups = ["AD Train", "NC Train", "AD Test", "NC Test"]
+
+    all_patients[0] = set(record_unique_patients(Path(train_root_directory + "/" + ad_directory)))
+    all_patients[1] = set(record_unique_patients(Path(train_root_directory + "/" + nc_directory)))
+    all_patients[2] = set(record_unique_patients(Path(test_root_directory + "/" + ad_directory)))
+    all_patients[3] = set(record_unique_patients(Path(test_root_directory + "/" + nc_directory)))
+
+    for i in range(4):
+        print(f"{patient_groups[i]} has {len(all_patients[i])} unique patients")
+
+        for j in range(i + 1, 4):
+            duplicates = all_patients[i] & all_patients[j]
+
+            if len(duplicates) > 0:
+                print(f"Patients found across {patient_groups[i]} and {patient_groups[j]}.")
 
 def train_val_split(root_directory, ad_directory, nc_directory):
     ad_patients = record_unique_patients(Path(root_directory + "/" + ad_directory))

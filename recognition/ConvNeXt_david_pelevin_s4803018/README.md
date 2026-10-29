@@ -1,3 +1,8 @@
+# ConvNeXt ADNI Report - s4803018 (David Pelevin)
+## Introduction
+
+## Algorithm Breakdown
+
 ## Feasibility Review
 
 ### User Need, Scope & Acceptance Criteria
@@ -32,3 +37,37 @@ The substantial amount of time and GPU resources necessary can be managed using 
 
 [1] Z. Liu, H. Mao, C.-Y. Wu, C. Feichtenhofer, T. Darrell, and S. Xie, “A ConvNet for the 2020s,”
       in Proc. CVPR, 2022, pp. 11976–11986
+
+## Dependencies and Reproducibility
+
+The following libraries must be installed for this code to run:
+-   matplotlib
+-   torch
+-   torchvision
+-   pillow
+-   sklearn
+
+The results of this report should be reproducible due to the usage of specific seeds in train.py and the sorting of Path.glob outputs.
+
+## Preprocessing and Hyperparameter Decisions
+
+## Open Research Dilemna
+### Data Hygiene
+
+### Quantitative Benchmarking Against CNN
+
+### Resource Profiling Table
+
+### Failure Case Autopsy and Low Confidence Suggestions
+
+## Artificial Intelligence Usage Disclosure
+
+Claude Sonnet 5.5 Medium was used to help provide information and advice during the coding process.
+
+Specifically:
+-   Identifying how to calculate channel sizes during ConvNeXt stages
+-   Debugging a Data Leakage Error that occurred in the Validation set
+-   Advice for reducing overfitting (which was mostly ignored due to clashes with the task description)
+-   Helped write code in previous demos that was adapted here
+
+AI-suggested code was always checked against PyTorch documentation and ConvNeXt reports/explanations for validity and understanding. AI code was always rewritten with said understanding. The algorithms were also tested before and after changes to verify the desired functionality of said AI code. Code from previous demos were verified at the time, with appropriate adaptions made based on knowledge gained from the time.
