@@ -1,9 +1,6 @@
-import torch, torchvision
+import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
-from pathlib import Path
-from PIL import Image
+from torch.utils.data import DataLoader
 import modules
 import dataset
 
