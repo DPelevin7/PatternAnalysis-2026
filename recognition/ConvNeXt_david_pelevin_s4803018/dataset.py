@@ -7,45 +7,88 @@ from sklearn.model_selection import train_test_split
 
 ## Calculated using the ADNIDatasetFull class
 full_dataset_mean = torch.tensor(29.5524, dtype=torch.float32)
-full_dataset_std = torch.tensor(57.5199, dtype=torch.float32)
+full_dataset_std = torch.tensor(57.5198, dtype=torch.float32)
 
 ## Based off code from previous demo
 class ADNIDataset(Dataset):
-    """
-    
-    """
-    def __init__(self, train_directory, test_directory, ad_directory, nc_directory, patients=None):
+    def __init__(self, root_directory, secondary_root_directory, ad_directory, nc_directory, patients=None):
         self.images = []
         self.labels = []
+        self.file_names = []
 
-        paths = [Path(train_directory + "/" + ad_directory),
-                 Path(test_directory + "/" + nc_directory),
-                 Path(train_directory + "/" + ad_directory),
-                 Path(test_directory + "/" + nc_directory)]
+        ad_path = Path(root_directory + "/" + ad_directory)
+        nc_path = Path(root_directory + "/" + nc_directory)
+        ad_path_2 = Path(secondary_root_directory + "/" + ad_directory)
+        nc_path_2 = Path(secondary_root_directory + "/" + nc_directory)
 
-        for i in range(4):
-            for path in sorted(paths[i].glob("*.jpeg")):
-                patient_id = path.name.split(".")[0].split("_")[0]
-                if (patients != None) and (patient_id not in patients):
-                    # Not in this split
-                    continue
+        for path in sorted(ad_path.glob("*.jpeg")):
+            patient_id = path.name.split(".")[0].split("_")[0]
+            if (patients != None) and (patient_id not in patients):
+                # Not in this split
+                continue
 
-                image = Image.open(path).convert("L")
+            image = Image.open(path).convert("L")
 
-                ## https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
-                image_tensor = torchvision.transforms.functional.pil_to_tensor(image).to(torch.float32)
+            # https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
+            image_tensor = torchvision.transforms.functional.pil_to_tensor(image).to(torch.float32)
 
-                self.images.append(image_tensor)
-                self.labels.append(torch.tensor(1 - (i % 2)))
+            self.images.append(image_tensor)
+            self.labels.append(torch.tensor(1))
+            self.file_names.append(path.name.split(".")[0])
+
+        for path in sorted(nc_path.glob("*.jpeg")):
+            patient_id = path.name.split(".")[0].split("_")[0]
+            if (patients != None) and (patient_id not in patients):
+                # Not in this split
+                continue
+            
+            image = Image.open(path).convert("L")
+            
+            # https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
+            image_tensor = torchvision.transforms.functional.pil_to_tensor(image).to(torch.float32)
+
+            self.images.append(image_tensor)
+            self.labels.append(torch.tensor(0))
+            self.file_names.append(path.name.split(".")[0])
+        
+        for path in sorted(ad_path_2.glob("*.jpeg")):
+            patient_id = path.name.split(".")[0].split("_")[0]
+            if (patients != None) and (patient_id not in patients):
+                # Not in this split
+                continue
+
+            image = Image.open(path).convert("L")
+
+            # https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
+            image_tensor = torchvision.transforms.functional.pil_to_tensor(image).to(torch.float32)
+
+            self.images.append(image_tensor)
+            self.labels.append(torch.tensor(1))
+            self.file_names.append(path.name.split(".")[0])
+
+        for path in sorted(nc_path_2.glob("*.jpeg")):
+            patient_id = path.name.split(".")[0].split("_")[0]
+            if (patients != None) and (patient_id not in patients):
+                # Not in this split
+                continue
+            
+            image = Image.open(path).convert("L")
+            
+            # https://docs.pytorch.org/vision/main/generated/torchvision.transforms.functional.pil_to_tensor.html
+            image_tensor = torchvision.transforms.functional.pil_to_tensor(image).to(torch.float32)
+
+            self.images.append(image_tensor)
+            self.labels.append(torch.tensor(0))
+            self.file_names.append(path.name.split(".")[0])
 
     def __len__(self):
-        """
-        Returns the number of 
-        """
         return len(self.labels)
 
     def __getitem__(self, idx):
         return self.images[idx], self.labels[idx]
+
+    def getfilename(self, idx):
+        return self.file_names[idx]
 
 
 ## Based off code from Shakes for previous demo

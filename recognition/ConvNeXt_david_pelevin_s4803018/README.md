@@ -104,11 +104,73 @@ To ensure no data leakage occurs, all splits were performed on the patient level
 
 ### Quantitative Benchmarking Against CNN
 
+The Quantitative Results are summarised below.
 
+ConvNeXt
+-   Accuracy
+    -   Training: 98.43%
+    -   Validation: 85.34%
+    -   Test: 86.89%
+-   Number of True Positives/False Positives/True Negatives/False Negatives
+    -   Training: 7724, 40, 8340, 216
+    -   Validation: 1614, 215, 1885, 386
+    -   Test: 4139, 543, 4637, 781
+-   Precision for AD/NC
+    -   Training: 0.99485, 0.97475
+    -   Validation: 0.88245, 0.83004
+    -   Test: 0.88402, 0.85585
+-   Recall for AD/NC
+    -   Training: 0.97280, 0.99523
+    -   Validation: 0.80700, 0.89762
+    -   Test: 0.84126, 0.89517
+-   F1 Score AD/NC
+    -   Training: 0.98370, 0.98488
+    -   Validation: 0.84304, 0.86250
+    -   Test: 0.86211, 0.87507
+-   Macro F1 Score and AUROC
+    -   Training: 0.98429, 0.98401
+    -   Validation: 0.85277, 0.85231
+    -   Test: 0.86859, 0.86822
+
+CNN
+-   Accuracy
+    -   Training: 93.12%
+    -   Validation: 85.49%
+    -   Test: 85.98%
+-   Number of True Positives/False Positives/True Negatives/False Negatives
+    -   Training: 7516, 699, 7681, 424
+    -   Validation: 1788, 383, 1717, 212
+    -   Test: 4473, 969, 4211, 447
+-   Precision for AD/NC
+    -   Training: 0.91491, 0.94769
+    -   Validation: 0.82358, 0.89010
+    -   Test: 0.82194, 0.90404
+-   Recall for AD/NC
+    -   Training: 0.94660, 0.91659
+    -   Validation: 0.89400, 0.81762
+    -   Test: 0.90915, 0.81293
+-   F1 Score AD/NC
+    -   Training: 0.93049, 0.93188
+    -   Validation: 0.85735, 0.85232
+    -   Test: 0.86335, 0.85607
+-   Macro F1 Score and AUROC
+    -   Training: 0.93118, 0.93159
+    -   Validation: 0.85483, 0.85581
+    -   Test: 0.85971, 0.86104
 
 ### Resource Profiling Table
 
+The computational efficiency of the models can be seen below. Determined using predict.py.
 
+ConvNeXt
+-   Peak GPU VRAM during inference: 0.70 GB
+-   Parameter Count: 27818594
+-   Inference Run-Time per Image: ~256208 ns
+
+CNN
+-   Peak GPU VRAM during inference: 0.61 GB
+-   Parameter Count: 773922
+-   Inference Run-Time per Image: ~32318 ns
 
 ### Failure Case Autopsy and Low Confidence Suggestions
 
@@ -116,7 +178,7 @@ To ensure no data leakage occurs, all splits were performed on the patient level
 
 ### Conclusion
 
-
+Ultimately, I cannot recommend the use of this ConvNeXt model over the baseline CNN model. Despite the more complex architecture and self-attention techniques, the ConvNeXt model performed similarly to the simpler CNN model in terms of accuracy. Either way, the models were able to successfully train to be approximately 86% accurate, with the ability to detect some low confidence inputs. A normal CNN model with sufficient pre-processing is able to reasonably detect Alzheimer's Disease in patients.
 
 ## Artificial Intelligence Usage Disclosure
 
@@ -127,6 +189,7 @@ Specifically:
 -   Debugging a Data Leakage Error that occurred in the Validation set
 -   Advice for reducing overfitting (which was mostly ignored due to clashes with the task description)
 -   Helped write code in previous demos that was adapted here
+-   Assisted with parameter counts and VRAM usage detection
 
 AI-suggested code was always checked against PyTorch documentation and ConvNeXt reports/explanations for validity and understanding. AI code was always rewritten with said understanding. The algorithms were also tested before and after changes to verify the desired functionality of said AI code. Code from previous demos were verified at the time, with appropriate adaptions made based on knowledge gained from the time.
 

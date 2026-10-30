@@ -1,22 +1,43 @@
 from sklearn.metrics import roc_auc_score
-import dataset, modules
 import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+import modules
+import dataset
+import time
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-## Splits the training dataset into training and validation datasets by patient id
-train_split, val_split = dataset.train_val_split("/content/drive/My Drive/AD_NC/train", "AD", "NC")
+## Change these to fit current folder structure
+train_folder = "/content/drive/My Drive/AD_NC/train"
+test_folder = "/content/drive/My Drive/AD_NC/test"
 
-train_loader = DataLoader(dataset.ADNI_train("./ADNI/AD_NC/train", "AD", "NC", train_split), batch_size=32, shuffle=False)
-val_loader = DataLoader(dataset.ADNI_test("./ADNI/AD_NC/train", "AD", "NC", val_split), batch_size=32, shuffle=False)
-test_loader = DataLoader(dataset.ADNI_test("./ADNI/AD_NC/test", "AD", "NC"), batch_size=32, shuffle=False)
+## Removes Randomness and allows for Reproducibility
+## Based off suggestions from https://docs.pytorch.org/docs/2.15/notes/randomness.html
+torch.manual_seed(50)
+torch.backends.cudnn.benchmark = False
+torch.use_deterministic_algorithms(True)
+torch.backends.cudnn.deterministic = True
 
-## Loads a saved ConvNeXt model
+train_generator = torch.Generator()
+train_generator.manual_seed(50)
+
+## Splits the ADNI dataset into training, testing and validation datasets by patient id
+train_split, val_split, test_split = dataset.train_val_test_split(train_folder, test_folder, "AD", "NC")
+
+train_loader = DataLoader(dataset.ADNI_train(train_folder, test_folder, "AD", "NC", train_split), batch_size=32, shuffle=True, generator=train_generator)
+val_loader = DataLoader(dataset.ADNI_test(train_folder, test_folder, "AD", "NC", val_split), batch_size=32, shuffle=False)
+test_loader = DataLoader(dataset.ADNI_test(train_folder, test_folder, "AD", "NC", test_split), batch_size=32, shuffle=False)
+
+## Loads a saved model
 check_model = modules.ConvNeXt()
 check_model.to(device)
-check_model.load_state_dict(torch.load('./model_weights/convnext.pth', weights_only=True, map_location=device))
+check_model.load_state_dict(torch.load('/content/drive/My Drive/convnext.pth', weights_only=True, map_location=device))
+
+## Check number of parameters in model
+## https://www.geeksforgeeks.org/deep-learning/check-the-total-number-of-parameters-in-a-pytorch-model/
+total_params = sum(p.numel() for p in check_model.parameters())
+print(f"Total Parameters: {total_params}")
 
 check_model.eval()
 
@@ -24,6 +45,9 @@ for loader in [train_loader, val_loader, test_loader]:
     correct, tp, fp, tn, fn, total = 0, 0, 0, 0, 0, 0
     all_preds, all_labels = 0, 0
     init_tensor = False
+
+    ## Total inference time
+    total_inference = 0
 
     ## Records logits for visualisation
     tp_x = []
@@ -39,7 +63,20 @@ for loader in [train_loader, val_loader, test_loader]:
         for images, labels in loader:
             ## Retrieves logits and makes predictions
             images, labels = images.to(device), labels.to(device)
+
+            ## Reset Peak GPU VRAM
+            torch.cuda.reset_peak_memory_stats()
+
+            total_inference -= time.time_ns()
+
             outputs = check_model(images)
+
+            total_inference += time.time_ns()
+
+            ## Detect Peak GPU VRAM
+            peak_vram = torch.cuda.max_memory_allocated() / (1024 ** 3)
+            print(f"Peak GPU VRAM usage: {peak_vram:.2f} GB")
+
             preds = outputs.argmax(dim=1)
 
             one = torch.ones(preds.size())
@@ -92,6 +129,8 @@ for loader in [train_loader, val_loader, test_loader]:
                     fn_x.append(outputs[i][0].item())
                     fn_y.append(outputs[i][1].item())
 
+    print(f"Average Inference Time per Image: {total_inference / total}")
+
     ## Calculates the per-class precision, recall, and macro f1 score
     precision_ad = tp / (tp + fp)
     precision_nc = tn / (tn + fn)
@@ -108,8 +147,11 @@ for loader in [train_loader, val_loader, test_loader]:
     auroc = roc_auc_score(all_labels, all_preds)
 
     print(f"Test accuracy: {correct/total:.4f}")
-    print(f"{tp}, {fp}, {tn}, {fn}, {(tp + tn) / (tp + tn + fp + fn):.4f}")
-    print(f"{precision_ad}, {precision_nc}, {recall_ad}, {recall_nc}, {f1_ad}, {f1_nc}, {macro_f1}, {auroc}")
+    print(f"Number of True Positives: {tp}, Number of False Positives: {fp}, Number of True Negatives: {tn}, Number of False Negatives: {fn}")
+    print(f"Alzheimer's Precision: {precision_ad}, Normal Cognition Precision: {precision_nc}")
+    print(f"Alzheimer's Recall: {recall_ad}, Normal Cognition Recall: {recall_nc}")
+    print(f"Alzheimer's F1 Score: {f1_ad}, Normal Cognition F1 Score: {f1_nc}")
+    print(f"Macro F1 Score: {macro_f1}, AUROC Score: {auroc}")
 
     ## Displays the logits for each image to graph the model's confidence in the assigned categories
     plt.title("True Positive")

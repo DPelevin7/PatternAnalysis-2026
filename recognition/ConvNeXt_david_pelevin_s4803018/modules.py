@@ -93,50 +93,52 @@ class ConvNeXt(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.conv1 = nn.Conv2d(1, 96, 4, 4)
-        self.l1 = nn.LayerNorm(96)
+        convnext_size = 96
+
+        self.conv1 = nn.Conv2d(1, convnext_size, 4, 4)
+        self.l1 = nn.LayerNorm(convnext_size)
 
         self.convnext1 = nn.Sequential(
-            ConvNeXtBlock(96),
-            ConvNeXtBlock(96),
-            ConvNeXtBlock(96)
+            ConvNeXtBlock(convnext_size),
+            ConvNeXtBlock(convnext_size),
+            ConvNeXtBlock(convnext_size)
         )
 
-        self.downSample1 = downSample(96)
+        self.downSample1 = downSample(convnext_size)
 
         self.convnext2 = nn.Sequential(
-            ConvNeXtBlock(192),
-            ConvNeXtBlock(192),
-            ConvNeXtBlock(192)
+            ConvNeXtBlock(convnext_size * 2),
+            ConvNeXtBlock(convnext_size * 2),
+            ConvNeXtBlock(convnext_size * 2)
         )
 
-        self.downSample2 = downSample(192)
+        self.downSample2 = downSample(convnext_size * 2)
 
         self.convnext3 = nn.Sequential(
-            ConvNeXtBlock(384),
-            ConvNeXtBlock(384),
-            ConvNeXtBlock(384),
-            ConvNeXtBlock(384),
-            ConvNeXtBlock(384),
-            ConvNeXtBlock(384),
-            ConvNeXtBlock(384),
-            ConvNeXtBlock(384),
-            ConvNeXtBlock(384)
+            ConvNeXtBlock(convnext_size * 4),
+            ConvNeXtBlock(convnext_size * 4),
+            ConvNeXtBlock(convnext_size * 4),
+            ConvNeXtBlock(convnext_size * 4),
+            ConvNeXtBlock(convnext_size * 4),
+            ConvNeXtBlock(convnext_size * 4),
+            ConvNeXtBlock(convnext_size * 4),
+            ConvNeXtBlock(convnext_size * 4),
+            ConvNeXtBlock(convnext_size * 4)
         )
 
-        self.downSample3 = downSample(384)
+        self.downSample3 = downSample(convnext_size * 4)
 
         self.convnext4 = nn.Sequential(
-            ConvNeXtBlock(768),
-            ConvNeXtBlock(768),
-            ConvNeXtBlock(768)
+            ConvNeXtBlock(convnext_size * 8),
+            ConvNeXtBlock(convnext_size * 8),
+            ConvNeXtBlock(convnext_size * 8)
         )
 
         self.averagePool = nn.AdaptiveAvgPool2d(1)
 
-        self.l2 = nn.LayerNorm(768)
+        self.l2 = nn.LayerNorm(convnext_size * 8)
 
-        self.linear = nn.Linear(768, 2)
+        self.linear = nn.Linear(convnext_size * 8, 2)
 
     def forward(self, input):
         input = self.conv1(input)
