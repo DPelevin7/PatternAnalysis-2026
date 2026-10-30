@@ -5,7 +5,11 @@ This repository focus on the implementation of a ConvNeXt model for identifying 
 
 ## Algorithm Breakdown
 
+ConvNeXt models were designed by combining features of convolutional neural networks (CNN) with vision transformers (ViT). Vision Transformers use of self-attention caused them to outperform advanced CNN designs like Res-Net. While Swin Transformers were able to use self-attention with a convolution like sliding window, ViTs naturally scale quadratically to account for the relationships between each frame. As a result, these require immense resources in fields like image processing due to the number of pixels per image. Convolution neural networks have a simpler computational design, and ConvNeXt models combine ViT's self-attention with the simple model of a CNN to achieve higher accuracy. ConvNeXt models have numerous alterations to resemble Swin Transformers, with patchify stem layers, block ratio of (3, 3, 9, 3), GELU activation layers, and layer normalisation over batch all being significant differences between a typical CNN and the ConvNeXt design [1] [2].
 
+A visualisation of the ConvNeXt architecture can be seen below [2]:
+
+![ConvNeXt Architecture](./images/architecture.png)
 
 ## Feasibility Review
 
@@ -45,13 +49,23 @@ The substantial amount of time and GPU resources necessary can be managed using 
 ## Dependencies and Reproducibility
 
 The following libraries must be installed for this code to run:
--   matplotlib
--   torch
--   torchvision
--   pillow
--   sklearn
+-   matplotlib (recommended version 3.10.0)
+-   torch (recommended version 2.11.0+cu130)
+-   torchvision (recommended version 0.26.0+cu130)
+-   pillow (recommended version 11.3.0)
+-   scikit-learn (recommended version 1.6.1)
 
 The results of this report should be reproducible due to the usage of specific seeds in train.py and the sorting of Path.glob outputs.
+
+## Example Inputs and Outputs
+
+Expected inputs for the model are 256x240 2D brain scans like this one:
+
+![2D Brain Scan](./images/example_input.png)
+
+These images are supposed to be opened by an ADNIDataset (found in dataset.py) to be converted to Tensors.
+
+The outputs of the model will be an N x 2 Tensor filled with the logits for each image, where N is the number of images in the batch. These logits represent the confidence of the model for each classification, with the first logit representing Normal Cognition and the second representing Alzheimer's Disease. For simple analysis taking the index of the maximum argument will return the estimated class. Further analysis on approximating uncertain values will be discussed later in the report.
 
 ## Preprocessing and Hyperparameter Decisions
 
@@ -61,7 +75,15 @@ Preprocessing occurs with the following steps:
 -   Random Horizontal Flips
 -   Random crops of the files
 
-** Must finish writing **
+While Cut-Up and Mix-Up were trialed using the following PyTorch example (https://docs.pytorch.org/vision/main/auto_examples/transforms/plot_cutmix_mixup.html), it appeared to reduce the accuracy by approximately 2% while not substantially increasing the generalisation. While more testing could have been performed with RandAugment and RandomErasing, they were ultimately excluded from this model due to the similarities between the brain scans.
+
+The Hyperparameters were chosen for the following reasons:
+
+-   50 epochs gave enough time for the model to train sufficiently without overfitting drastically.
+-   Initial training with learning rates of 1e-3 like in [1] failed to train (got stuck at high loss values) so it was lowered to 4e-4.
+-   The ConvNeXt model size of 96 was kept since the brain scan images sizes are similar to that of report [1]. Experiments on lower model sizes of 64 caused lowered accuracy, and increasing the model risked overfitting.
+-   Cross Entropy Loss with label smoothing of 0.1 with AdamW optimiser were chosen based on the original ConvNeXt report [1]. Initial tests on Adam optimiser with no label smoothing had slightly worse results.
+-   The block ratio of (3, 3, 9, 3) was kept, since smaller models like (2, 2, 6, 2) seemed to perform with lower accuracy and larger models risked overfitting.
 
 ## Open Research Dilemna
 ### Data Hygiene
@@ -76,7 +98,9 @@ As alluded to in the Feasibility Review, running an initial data audit on the pr
 
 This audit is based on the assumption given by tutors that the filenames follow the format: "patient_id"_"slice_id".jpeg.
 
-To ensure no data leakage occurs, the training validation split was performed on the patient level instead of the slice level. This patient level split is performed in dataset.train_val_split, the outputs of which are used in the dataset.ADNIDataset. Patient IDs of each slice are checked when constructing the dataset and compared with the given split to ensure no data leakage occurs.
+After some initial training, it was decided that resplitting the training and test sets would be necessary due to the training set being too repetitive internally. To approximate the original split, 33% of the total patients would be in the Test set. An 80/20 training validation split was used to try and maximise the training samples while ensuring the validation split would not be skewed a individual outliers.
+
+To ensure no data leakage occurs, all splits were performed on the patient level instead of the slice level. This patient level split is performed in dataset.train_val_test_split, the outputs of which are used in the dataset.ADNIDataset. Patient IDs of each slice are checked when constructing the dataset and compared with the given split to ensure no data leakage occurs.
 
 ### Quantitative Benchmarking Against CNN
 
@@ -87,6 +111,10 @@ To ensure no data leakage occurs, the training validation split was performed on
 
 
 ### Failure Case Autopsy and Low Confidence Suggestions
+
+
+
+### Conclusion
 
 
 
@@ -101,3 +129,11 @@ Specifically:
 -   Helped write code in previous demos that was adapted here
 
 AI-suggested code was always checked against PyTorch documentation and ConvNeXt reports/explanations for validity and understanding. AI code was always rewritten with said understanding. The algorithms were also tested before and after changes to verify the desired functionality of said AI code. Code from previous demos were verified at the time, with appropriate adaptions made based on knowledge gained from the time.
+
+## References
+
+[1] Z. Liu, H. Mao, C.-Y. Wu, C. Feichtenhofer, T. Darrell, and S. Xie, “A ConvNet for the 2020s,”
+      in Proc. CVPR, 2022, pp. 11976–11986
+
+[2] GeeksforGeeks, “ConvNeXt,” GeeksforGeeks. Accessed: Oct. 30, 2026. [Online].
+      Available: https://www.geeksforgeeks.org/computer-vision/convnext/
