@@ -34,6 +34,9 @@ class CNN(nn.Module):
 
         Parameters:
             input (Tensor N, C, H, W / C, H, W): The batch of images to be categorised.
+        
+        Returns:
+            Tensor (int, int): The logits for the confidence in each class.
         """
         input = self.pool(F.relu(self.conv1(input)))
         input = self.pool(F.relu(self.conv2(input)))
@@ -46,13 +49,27 @@ class CNN(nn.Module):
         return input
 
 
-## ConvNeXt architecture based on https://www.geeksforgeeks.org/computer-vision/convnext/
 class ConvNeXtBlock(nn.Module):
+    """
+    A single ConvNeXt block based on the architecture
+    shown in https://www.geeksforgeeks.org/computer-vision/convnext/
+
+    Performs depthwise convolution, GELU activation, layer scale, and contains a drop path.
+    """
     def __init__(self, dimension, layer_scale=1e-6):
+        """
+        Initialises a ConvNeXt block with the relevant dimensions.
+
+        Setups up the depthwise convolution, GELU activation, and layer scale.
+
+        Parameters:
+            dimension (int): Number of channels in the image inputs
+            layer_scale (float): The hyperparameter in charge of layer scale within the block
+        """
         super().__init__()
 
-        # Depthwise convolution settings found in
-        # https://docs.pytorch.org/docs/2.14/generated/torch.nn.Conv2d.html
+        ## Depthwise convolution requires groups=dimension. This setting was found in
+        ## https://docs.pytorch.org/docs/2.14/generated/torch.nn.Conv2d.html
         self.depthConv2d = nn.Conv2d(dimension, dimension, 7, padding=3, groups=dimension)
 
         self.l1 = nn.LayerNorm(dimension)
@@ -62,35 +79,78 @@ class ConvNeXtBlock(nn.Module):
         self.gamma = nn.Parameter(layer_scale * torch.ones(dimension))
 
     def forward(self, input):
+        """
+        Runs a batch of images through the ConvNeXt block.
+
+        Parameters:
+            input (Tensor N, C, H, W / C, H, W): The batch of images to be categorised.
+        
+        Returns:
+            Tensor (N, C, H, W): The convolved batch of images.
+        """
         carryThrough = input
 
         input = self.depthConv2d(input)
+        ## Layer norm requires channels to be last (N, H, W, C)
         input = self.l1(input.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
         input = self.conv1(input)
         input = self.gelu(input)
         input = self.conv2(input)
+        ## Layer scaling requires channels to be last (N, H, W, C)
         input = (self.gamma * input.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
-        # Stochastic Depth A.K.A Drop Path
+        ## Stochastic Depth A.K.A Drop Path
         input = torchvision.ops.stochastic_depth(input, 0.1, "row", self.training)
 
         return input + carryThrough
 
 
 class downSample(nn.Module):
+    """
+    Implements downsampling of the image.
+    Each downsample doubles the number of channels and halves the height and width of the image.
+
+    Based on the architecture shown in
+    https://www.geeksforgeeks.org/computer-vision/convnext/
+    """
     def __init__(self, dimension):
+        """
+        Initalises the layer norm and convolution in charge of downsampling.
+
+        Parameters:
+            dimension (int): The number of channels in the inputted image.
+        """
         super().__init__()
 
         self.l1 = nn.LayerNorm(dimension)
         self.conv1 = nn.Conv2d(dimension, dimension * 2, 2, 2)
 
     def forward(self, input):
+        """
+        Downsamples an image by doubling the number of channels and halving the height and width.
+
+        Parameters:
+            input (Tensor N, C, H, W / C, H, W): The batch of images to be downsampled.
+
+        Returns:
+            Tensor N, C * 2, H / 2, W / 2: The downsampled image tensors
+        """
+        ## Layer norm requires channels to be last (N, H, W, C)
         input = self.l1(input.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
         input = self.conv1(input)
         return input
 
 
 class ConvNeXt(nn.Module):
+    """
+    A Tiny ConvNeXt model for 256x240px images based on the architecture
+    shown in https://www.geeksforgeeks.org/computer-vision/convnext/
+
+    Implements a ConvNeXt model with dimensions 96 and batch sizes (3, 3, 9, 3).
+    """
     def __init__(self):
+        """
+        Initialises the components of the ConvNeXt model.
+        """
         super().__init__()
 
         convnext_size = 96
@@ -141,7 +201,18 @@ class ConvNeXt(nn.Module):
         self.linear = nn.Linear(convnext_size * 8, 2)
 
     def forward(self, input):
+        """
+        Classifies a batch of images using the ConvNeXt model and returns logits
+        representing the confidence of the model in each class.
+
+        Parameters:
+            input (Tensor N, C, H, W / C, H, W): The batch of images to be categorised.
+
+        Returns:
+            Tensor (int, int): The logits for the confidence in each class.
+        """
         input = self.conv1(input)
+        ## Layer norm requires channels to be last (N, H, W, C)
         input = self.l1(input.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
         input = self.convnext1(input)
         input = self.downSample1(input)
@@ -151,6 +222,7 @@ class ConvNeXt(nn.Module):
         input = self.downSample3(input)
         input = self.convnext4(input)
         input = self.averagePool(input)
+        ## Layer norm requires channels to be last (N, H, W, C)
         input = self.l2(input.permute(0, 2, 3, 1))
         input = self.linear(input).permute(0, 3, 1, 2)
         input = torch.flatten(input, 1)

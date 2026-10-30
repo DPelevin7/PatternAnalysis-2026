@@ -112,7 +112,7 @@ To ensure no data leakage occurs, all splits were performed on the patient level
 
 ### Quantitative Benchmarking Against CNN
 
-The training printouts (loss and validation accuracy) are shown below.
+The training printouts (loss and validation accuracy) for the ConvNeXt and CNN models are shown below.
 
 ![ConvNeXt Training Output](./images/convnext_training.png) ![CNN Training Output](./images/cnn_training.png)
 
@@ -202,7 +202,7 @@ The ConvNeXt model has the false negative and false positive values follow the t
 
 ### Conclusion
 
-Ultimately, I cannot recommend the use of this ConvNeXt model over the baseline CNN model. Despite the more complex architecture and self-attention techniques, the ConvNeXt model performed similarly to the simpler CNN model in terms of accuracy and other metrics. In addition, the CNN model had clearer generalisation and better confidence divisions. Either way, the models were able to successfully train to be approximately 86% accurate, with the ability to detect some low confidence inputs. A normal CNN model with sufficient pre-processing is able to reasonably detect Alzheimer's Disease in patients.
+Ultimately, I cannot recommend the use of this ConvNeXt model over the baseline CNN model. Despite the more complex architecture and self-attention techniques, the ConvNeXt model performed similarly to the simpler CNN model in terms of accuracy and other metrics. In addition, the CNN model had clearer generalisation and better confidence divisions. The CNN model should be implemented with uncertainty when the smaller logit is above -1. If the ConvNeXt model is implemented, it's uncertain values should occur when the larger logit is below 1. Either way, the models were able to successfully train to be approximately 86% accurate, with the ability to detect some low confidence inputs. A normal CNN model with sufficient pre-processing is able to reasonably detect Alzheimer's Disease in patients.
 
 ## Artificial Intelligence Usage Disclosure
 

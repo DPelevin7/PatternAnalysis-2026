@@ -9,8 +9,8 @@ import time
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 ## Change these to fit current folder structure
-train_folder = "/content/drive/My Drive/AD_NC/train"
-test_folder = "/content/drive/My Drive/AD_NC/test"
+train_folder = "./ADNI/AD_NC/train"
+test_folder = "./ADNI/AD_NC/test"
 
 ## Removes Randomness and allows for Reproducibility
 ## Based off suggestions from https://docs.pytorch.org/docs/2.15/notes/randomness.html
@@ -32,7 +32,7 @@ test_loader = DataLoader(dataset.ADNI_test(train_folder, test_folder, "AD", "NC"
 ## Loads a saved model
 check_model = modules.ConvNeXt()
 check_model.to(device)
-check_model.load_state_dict(torch.load('/content/drive/My Drive/convnext.pth', weights_only=True, map_location=device))
+check_model.load_state_dict(torch.load('./model_weights/convnext.pth', weights_only=True, map_location=device))
 
 ## Check number of parameters in model
 ## https://www.geeksforgeeks.org/deep-learning/check-the-total-number-of-parameters-in-a-pytorch-model/
@@ -103,8 +103,6 @@ for loader in [train_loader, val_loader, test_loader]:
             fp += fp_tensor.sum().item()
             fn += fn_tensor.sum().item()
 
-            total += labels.size(0)
-
             ## Records the predictions for AUROC calculation
             if init_tensor:
                 all_preds = torch.cat([all_preds, preds], dim=0)
@@ -128,6 +126,12 @@ for loader in [train_loader, val_loader, test_loader]:
                 elif fn_tensor[i].item():
                     fn_x.append(outputs[i][0].item())
                     fn_y.append(outputs[i][1].item())
+
+                    ## Retrieves significantly confident false positive filenames for analysis
+                    if outputs[i][1].item() < -1:
+                        print(loader.dataset.getfilename(total + i))
+
+            total += labels.size(0)
 
     print(f"Average Inference Time per Image: {total_inference / total}")
 
