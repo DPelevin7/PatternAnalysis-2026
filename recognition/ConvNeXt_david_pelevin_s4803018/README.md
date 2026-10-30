@@ -1,4 +1,12 @@
 # ConvNeXt ADNI Report - s4803018 (David Pelevin)
+## Repo Usage
+
+Both the ConvNeXt and CNN models are contained within modules.py.
+
+The dataset and preprocessing for the ADNI dataset are contained within dataset.py
+
+train.py and predict.py are example scripts that will handle model training and model evaluation respectively. When running said scripts ensure the correct data folders are pointed to on lines 10/11 or 12/13 respectively, the correct saving/loading folder is pointed to on line 99 and 35 respectively, and ensure the correct model is chosen on line 35 and 33 respectively (ConvNeXt or CNN).
+
 ## Introduction
 
 This repository focus on the implementation of a ConvNeXt model for identifying Alzheimer's Disease in patients. An ADNI dataset consisting of 2D slices of brain scans with existing train/test splits was provided to train the model. Ideally, the model will quickly and accurately identify the disease, however previous usage of AI models in medical fields revealed drastic overconfidence and overfitting. As a result, the model should be able to identify more uncertain cases that need human review. This facilitates sensible human oversight and accounting for possible errors in the model while still reducing the workload for doctors. ConvNeXt was chosen for its modern image processing design and its use of logits, which can be used to determine the model's confidence.
@@ -71,9 +79,9 @@ The outputs of the model will be an N x 2 Tensor filled with the logits for each
 
 Preprocessing occurs with the following steps:
 
--   Normalisation
--   Random Horizontal Flips
--   Random crops of the files
+-   Normalisation (ensures bright pixels don't substantially skew training)
+-   Random Horizontal Flips (in case any brain scans are reversed)
+-   Random crops of the files (to reduce reliance on specific subsets of the brain and improve generalisation)
 
 While Cut-Up and Mix-Up were trialed using the following PyTorch example (https://docs.pytorch.org/vision/main/auto_examples/transforms/plot_cutmix_mixup.html), it appeared to reduce the accuracy by approximately 2% while not substantially increasing the generalisation. While more testing could have been performed with RandAugment and RandomErasing, they were ultimately excluded from this model due to the similarities between the brain scans.
 
@@ -104,59 +112,67 @@ To ensure no data leakage occurs, all splits were performed on the patient level
 
 ### Quantitative Benchmarking Against CNN
 
-The Quantitative Results are summarised below.
+The training printouts (loss and validation accuracy) are shown below.
+
+![ConvNeXt Training Output](./images/convnext_training.png) ![CNN Training Output](./images/cnn_training.png)
+
+As expected, these training results show that the simpler CNN model improved faster than the ConvNeXt model initially. The ConvNeXt finished with a slightly better test accuracy of 86.89% vs the CNN's test accuracy of 85.98%. However, the training loss is higher with the CNN, implying that it has better generalisation.
+
+The Quantitative Results for the best validation epochs are summarised below.
 
 ConvNeXt
 -   Accuracy
-    -   Training: 98.43%
-    -   Validation: 85.34%
-    -   Test: 86.89%
+    -   Training: 96.51%
+    -   Validation: 86.02%
+    -   Test: 86.37%
 -   Number of True Positives/False Positives/True Negatives/False Negatives
-    -   Training: 7724, 40, 8340, 216
-    -   Validation: 1614, 215, 1885, 386
-    -   Test: 4139, 543, 4637, 781
+    -   Training: 7568, 197, 8183, 372
+    -   Validation: 1719, 215, 1808, 281
+    -   Test: 4323, 780, 4400, 597
 -   Precision for AD/NC
-    -   Training: 0.99485, 0.97475
-    -   Validation: 0.88245, 0.83004
-    -   Test: 0.88402, 0.85585
+    -   Training: 0.97463, 0.95652
+    -   Validation: 0.85480, 0.86549
+    -   Test: 0.84715, 0.88053
 -   Recall for AD/NC
-    -   Training: 0.97280, 0.99523
-    -   Validation: 0.80700, 0.89762
-    -   Test: 0.84126, 0.89517
+    -   Training: 0.95315, 0.97649
+    -   Validation: 0.85950, 0.86095
+    -   Test: 0.87866, 0.84942
 -   F1 Score AD/NC
-    -   Training: 0.98370, 0.98488
-    -   Validation: 0.84304, 0.86250
-    -   Test: 0.86211, 0.87507
+    -   Training: 0.96377, 0.96640
+    -   Validation: 0.85714, 0.86321
+    -   Test: 0.86262, 0.86469
 -   Macro F1 Score and AUROC
-    -   Training: 0.98429, 0.98401
-    -   Validation: 0.85277, 0.85231
-    -   Test: 0.86859, 0.86822
+    -   Training: 0.96509, 0.96482
+    -   Validation: 0.86018, 0.86023
+    -   Test: 0.86366, 0.86404
 
 CNN
 -   Accuracy
-    -   Training: 93.12%
-    -   Validation: 85.49%
-    -   Test: 85.98%
+    -   Training: 91.71%
+    -   Validation: 86.63%
+    -   Test: 85.91%
 -   Number of True Positives/False Positives/True Negatives/False Negatives
-    -   Training: 7516, 699, 7681, 424
-    -   Validation: 1788, 383, 1717, 212
-    -   Test: 4473, 969, 4211, 447
+    -   Training: 7353, 766, 7614, 587
+    -   Validation: 1769, 317, 1783, 231
+    -   Test: 4406, 909, 4271, 514
 -   Precision for AD/NC
-    -   Training: 0.91491, 0.94769
-    -   Validation: 0.82358, 0.89010
-    -   Test: 0.82194, 0.90404
+    -   Training: 0.90565, 0.92842
+    -   Validation: 0.84803, 0.88530
+    -   Test: 0.82897, 0.89258
 -   Recall for AD/NC
-    -   Training: 0.94660, 0.91659
-    -   Validation: 0.89400, 0.81762
-    -   Test: 0.90915, 0.81293
+    -   Training: 0.92607, 0.90859
+    -   Validation: 0.8845, 0.84905
+    -   Test: 0.89553, 0.82452
 -   F1 Score AD/NC
-    -   Training: 0.93049, 0.93188
-    -   Validation: 0.85735, 0.85232
-    -   Test: 0.86335, 0.85607
+    -   Training: 0.91575, 0.91840
+    -   Validation: 0.86588, 0.86680
+    -   Test: 0.86097, 0.85720
 -   Macro F1 Score and AUROC
-    -   Training: 0.93118, 0.93159
-    -   Validation: 0.85483, 0.85581
-    -   Test: 0.85971, 0.86104
+    -   Training: 0.91707, 0.91733
+    -   Validation: 0.86634, 0.86677
+    -   Test: 0.85908, 0.86002
+
+The quantitative results above show that the ConvNeXt model has overfitted more than the CNN model has. It has a significantly higher training accuracy, with little improvement regarding the test results. The CNN model is better at detecting Alzheimer's than the ConvNeXt model, as shown by the lower number of false negatives and higher AD Recall in the test set. However, the ConvNeXt boasts a better F1 score and AUROC score, due to its comparable AD F1 score, and better NC performance.
 
 ### Resource Profiling Table
 
@@ -172,13 +188,21 @@ CNN
 -   Parameter Count: 773922
 -   Inference Run-Time per Image: ~32318 ns
 
+Unsurprisingly the ConvNeXt model is significantly larger and slower than the CNN model. Given the lack of a significant difference between the CNN and ConvNeXt model in performance, this implies that the ConvNeXt model is simply not worth the resources it requires.
+
 ### Failure Case Autopsy and Low Confidence Suggestions
 
+Providing suggestions on implementing low confidence requires knowledge on how the logits are distributed for each of the 4 result types (TP, FP, TN, FN). The logit distributions for both the ConvNeXt and CNN are shown below:
 
+![ConvNeXt Training Output](./images/convnext_logit_visualisation.png) ![CNN Training Output](./images/cnn_logit_visualisation.png)
+
+The CNN model has a clear division in confidence between the false values and their true counterparts. The true values have lower false logits and higher true logits than the false counterparts. The majority of false negative outputs have AD logit above -1, and the false positive outputs have NC logits above -1. By contrast, the true positive has most values between -1 and -3 on the NC logit and the true negative has most values between -1 and -2.5. As a result, requiring the outputs to have a lower logit beneath -1 seems sufficient for dividing high confidence and low confidence results.
+
+The ConvNeXt model has the false negative and false positive values follow the true negative and true positive values more closely. While the true values tend to group at the extremes of the logit range, the false values have a fairly even distribution along the line making it difficult to distinguish them. A reasonable cut-off point for high confidence seems to be true logits above 1.0. Both the true positive and true negative values image density increases past AD logit = 1.0 and NC logit = 1.0 respectively. While this will cause some of the false values to be considered high confidence, the even distribution will cause a greater percentage to exist in the uncertain range than the high confidence. Thus, requiring the outputs to have an upper logit above 1 seems reasonable for dividing high confidence and low confidence results.
 
 ### Conclusion
 
-Ultimately, I cannot recommend the use of this ConvNeXt model over the baseline CNN model. Despite the more complex architecture and self-attention techniques, the ConvNeXt model performed similarly to the simpler CNN model in terms of accuracy. Either way, the models were able to successfully train to be approximately 86% accurate, with the ability to detect some low confidence inputs. A normal CNN model with sufficient pre-processing is able to reasonably detect Alzheimer's Disease in patients.
+Ultimately, I cannot recommend the use of this ConvNeXt model over the baseline CNN model. Despite the more complex architecture and self-attention techniques, the ConvNeXt model performed similarly to the simpler CNN model in terms of accuracy and other metrics. In addition, the CNN model had clearer generalisation and better confidence divisions. Either way, the models were able to successfully train to be approximately 86% accurate, with the ability to detect some low confidence inputs. A normal CNN model with sufficient pre-processing is able to reasonably detect Alzheimer's Disease in patients.
 
 ## Artificial Intelligence Usage Disclosure
 
